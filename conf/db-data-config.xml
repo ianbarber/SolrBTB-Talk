@@ -1,0 +1,28 @@
+<dataConfig>
+<dataSource driver="com.mysql.jdbc.Driver"
+  url="jdbc:mysql://localhost:3306/orig"
+  user="root"
+  password="password" />
+  <document>
+    <entity name="story" 
+      query="SELECT s.id, s.content, s.slug, FROM_UNIXTIME(s.publish_date) as publish_date, s.title, s.description, CONCAT(u.first_name, ' ', u.last_name) as author, s.author_id FROM stories as s JOIN users as u ON u.id = s.author_id WHERE s.status_id = 1"
+      deltaImportQuery="SELECT s.id, s.content, s.slug, s.publish_date, s.title, s.description, CONCAT(u.first_name, ' ', u.last_name) as author, s.author_id FROM stories as s JOIN users as u ON u.id = s.author_id WHERE s.status_id = 1 AND s.id = ${dataimporter.delta.id}"
+      deltaQuery="SELECT id FROM stories WHERE modified > ${dataimporter.last_index_time}"
+      transformer="TemplateTransformer,HTMLStripTransformer"
+	>
+      <field column="permalink" name="permalink" template="http://fooweb.com/${story.slug}" />
+      <field column="publish_date" name="date" />
+      <field column="title" />
+      <field column="description" name="lead_para" stripHTML="true" />
+      <field column="content" name="body" stripHTML="true" />
+      <field column="author" />
+      <entity name="tag" query="SELECT t.title as tag FROM tags as t JOIN story_tags as st ON st.tag_id = t.id WHERE st.story_id = ${story.id}">
+        <field column="tag" />
+      </entity>
+      <entity name="topic" query="SELECT t.title as category FROM topics as t JOIN story_topics as vst ON st.topic_id = t.id WHERE st.item_id = ${story.id}">
+        <field column="category" />
+      </entity>
+      <field column="source_site" template="cms" />
+    </entity>
+  </document>
+</dataConfig>
